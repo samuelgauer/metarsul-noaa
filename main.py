@@ -64,7 +64,17 @@ def process_cached(content: bytes) -> bytes:
 @app.get("/tiles/{z}/{x}/{y}.png")
 async def get_tile(z: int, x: int, y: int):
     time_str = get_time()
-    url = GOES_URL.format(z=z, x=x, y=y, time=time_str)
+    # 👇 inverter eixo Y (ESSENCIAL)
+    tile_matrix = z
+    tile_row = (2 ** z - 1) - y
+    tile_col = x
+
+    url = GOES_URL.format(
+        z=tile_matrix,
+        x=tile_col,
+        y=tile_row,
+        time=time_str
+    )
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
