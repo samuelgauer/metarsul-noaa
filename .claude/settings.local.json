@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nasa-gibs.github.io)",
+      "WebFetch(domain:wiki.earthdata.nasa.gov)",
+      "WebFetch(domain:gibs.earthdata.nasa.gov)",
+      "Bash(curl -sI \"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_Band13_Clean_Infrared/default/2026-04-06T00:00:00Z/GoogleMapsCompatible_Level6/3/2/4.png\")",
+      "Bash(where python:*)"
+    ]
+  }
+}
