@@ -8,6 +8,8 @@ from datetime import datetime, timezone, timedelta
 import asyncio
 import logging
 
+logger = logging.getLogger("uvicorn.error")
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -24,7 +26,6 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-logger = logging.getLogger("uvicorn.error")
 
 GOES_URL = (
     "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/"
@@ -35,7 +36,6 @@ GOES_URL = (
 
 # Tile usada apenas para probing — tile central da cobertura GOES-East
 PROBE_Z, PROBE_X, PROBE_Y = 3, 2, 4
-PROBE_ROW = (2 ** PROBE_Z - 1) - PROBE_Y  # converte Y XYZ → row GIBS
 
 DEFAULT_SATURATION_THRESHOLD = 0.15
 MAX_SUPPORTED_ZOOM = 6
@@ -106,7 +106,7 @@ async def _probe_latest_time() -> str | None:
     for offset_10min in range(2, 8):
         candidate = _snap_to_10min(now - timedelta(minutes=offset_10min * 10))
         time_str = _format_time(candidate)
-        url = GOES_URL.format(z=PROBE_Z, x=PROBE_X, y=PROBE_ROW, time=time_str)
+        url = GOES_URL.format(z=PROBE_Z, x=PROBE_X, y=PROBE_Y, time=time_str)
         try:
             resp = await client.get(url)
             if resp.status_code == 200:
@@ -135,7 +135,6 @@ async def _background_probe():
         await asyncio.sleep(PROBE_INTERVAL_SECONDS)
 
 
-
 @app.get("/tiles/{z}/{x}/{y}.png")
 async def get_tile(
     z: int,
@@ -159,9 +158,7 @@ async def get_tile(
             headers={"Cache-Control": f"max-age={CACHE_CONTROL_MAX_AGE}"},
         )
 
-    # Inverte eixo Y (XYZ → row GIBS TMS)
-    tile_row = (2 ** z - 1) - y
-    url = GOES_URL.format(z=z, x=x, y=tile_row, time=time_str)
+    url = GOES_URL.format(z=z, x=x, y=y, time=time_str)
 
     try:
         client = await _get_client()
